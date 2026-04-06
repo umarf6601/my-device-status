@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Status Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        h2 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        .device-list { list-style: none; padding: 0; }
+        .device-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .status-pill { padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
+        .online { background: #e6fffa; color: #2d6a4f; border: 1px solid #2d6a4f; }
+        .offline { background: #fff5f5; color: #c53030; border: 1px solid #c53030; }
+        .indicator { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .online .indicator { background: #2ecc71; }
+        .offline .indicator { background: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Device Status Monitor</h2>
+    <div id="loading">Fetching data...</div>
+    <ul id="device-list" class="device-list"></ul>
+</div>
+
+<script>
+    // REPLACE THIS URL with your "Publish to Web" CSV link from Google Sheets
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtg1KWtu82ekxBYwTh1Xz0bBiUaqgKJ-_5R3hQS2wZzIKkhxT0itWCxjKAgxquu5ID9SG_4-9SUqtW/pub?output=csv';
+
+    async function fetchStatus() {
+        try {
+            const response = await fetch(SHEET_CSV_URL);
+            const data = await response.text();
+            const rows = data.split('\n').slice(1); // Skip header row
+            
+            const listContainer = document.getElementById('device-list');
+            document.getElementById('loading').style.display = 'none';
+            listContainer.innerHTML = '';
+
+            rows.forEach(row => {
+                const [name, status, lastSeen] = row.split(',');
+                if (!name) return;
+
+                const isOnline = status.trim().toLowerCase() === 'online';
+                const listItem = document.createElement('li');
+                listItem.className = 'device-item';
+                
+                listItem.innerHTML = `
+                    <div>
+                        <strong>${name}</strong><br>
+                        <small style="color: #666">Last check: ${lastSeen}</small>
+                    </div>
+                    <span class="status-pill ${isOnline ? 'online' : 'offline'}">
+                        <span class="indicator"></span>${status}
+                    </span>
+                `;
+                listContainer.appendChild(listItem);
+            });
+        } catch (error) {
+            document.getElementById('loading').innerText = 'Error loading data. Check CSV URL.';
+            console.error(error);
+        }
+    }
+
+    fetchStatus();
+    // Refresh every 30 seconds
+    setInterval(fetchStatus, 30000);
+</script>
+
+</body>
+</html>
